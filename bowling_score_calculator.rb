@@ -1,5 +1,10 @@
 # Method to calculate bowling scores
 def calculate_bowling_score(rolls)
+  # Validate the rolls before processing
+  unless valid_rolls?(rolls)
+    raise "Invalid input: Rolls can only be numbers between 0-9, 'X', or '/'"
+  end
+
   scores = [] # Array to store scores for each frame
   frame_index = 0 # Index to track the current frame
   roll_index = 0 # Index to track the current roll
@@ -11,34 +16,35 @@ def calculate_bowling_score(rolls)
 
     if rolls[roll_index] == "X" # Check for a strike
       # Calculate strike score if the next two rolls are available
-      if roll_index + 2 < rolls.length
-        scores << 10 + strike_bonus(rolls, roll_index)
-      else
+      if roll_index + 2 >= rolls.length
         scores << nil # Incomplete frame
+      else
+        scores << 10 + strike_bonus(rolls, roll_index)
       end
       roll_index += 1 # Move to the next frame (one roll per frame for strike)
     elsif rolls[roll_index].is_a?(Integer) # Check for open frame or spare
       # Ensure there is another roll in the frame
-      if roll_index + 1 < rolls.length
+      if roll_index + 1 >= rolls.length
+        scores << nil # Incomplete frame
+      else
+        raise "Invalid roll sequence: Strike followed by a number" if rolls[roll_index + 1] == "X"
         if rolls[roll_index + 1].is_a?(Integer) # Open frame
           scores << rolls[roll_index] + rolls[roll_index + 1]
         elsif rolls[roll_index + 1] == "/" # Spare
           # Calculate spare score if the next roll is available
-          if roll_index + 2 < rolls.length
-            scores << 10 + spare_bonus(rolls, roll_index)
-          else
+          if roll_index + 2 >= rolls.length
             scores << nil # Incomplete frame
+          else
+            scores << 10 + spare_bonus(rolls, roll_index)
           end
         end
-      else
-        scores << nil # Incomplete frame
       end
       roll_index += 2 # Move to the next frame (2 rolls per frame)
     end
     frame_index += 1 # Increment frame index after processing a frame
   end
 
-  return scores, frame_index # Return the scores and the last frame index processed
+  return scores # Return the scores array
 end
 
 # Helper method to calculate strike bonus
@@ -68,6 +74,20 @@ def strike_bonus(rolls, index)
   bonus # Return the total bonus
 end
 
+# Helper method to validate the rolls
+def valid_rolls?(rolls)
+  rolls.all? do |element|
+    case element
+    when Integer
+      element.between?(0, 9)
+    when String
+      element.match?(/\A[\/X]\z/)
+    else
+      false
+    end
+  end
+end
+
 # Helper method to calculate spare bonus
 def spare_bonus(rolls, index)
   # Raise an error if the sequence is invalid (spare followed by another spare)
@@ -77,5 +97,5 @@ def spare_bonus(rolls, index)
 end
 
 # Test the method with some sample data
-sample_rolls = ["X", 3, 6, "X", 4, 5, "X", 2, 7, "X", 6, 3, "X", 7, 1, "X", 9, 0]
+sample_rolls = [4, 5, "X", 8, 1]
 puts calculate_bowling_score(sample_rolls).inspect
